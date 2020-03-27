@@ -70,7 +70,7 @@ getCompBoxPlot = function(plot, labels) {
 
 ## R Markdown
 
-```{r}
+```{r, echo=FALSE}
 load("performance.RData")
 
 data <- base_f
@@ -80,14 +80,11 @@ str(data)
 summary(data)
 
 educationLevelsLabels = c("none or primary education (4th grade)", "5th to 9th grade", "secondary education", "higher education")
-
-# Variable dependiente
-# create_report(data)
 ```
 
 ## Nivel de educacion de la madre
 
-```{r univar Medu}
+```{r univar Medu, echo=FALSE}
 #boxplot:
 summary(data$Medu)
 data$Medu = factor(
@@ -98,14 +95,15 @@ data$Medu = factor(
 summary(data$Medu)
 
 motherEdTable=tabla_freq(data$Medu,0)
-getAbsFrequencyBarGraph(motherEdTable, c("Nivel de educacion de la madre", "Frecuencia"), c(0,150), seq(0,150,10))
-getRelFrequencyBarGraph(motherEdTable, c("Nivel de educacion de la madre", "Frecuencia"), c(0,0.5), seq(0,0.5,0.05))
+motherEdTable
+getAbsFrequencyBarGraph(motherEdTable, c("Nivel de educacion de la madre", "Frecuencia Absoluta"), c(0,150), seq(0,150,10))
+getRelFrequencyBarGraph(motherEdTable, c("Nivel de educacion de la madre", "Frecuencia Relativa"), c(0,0.5), seq(0,0.5,0.05))
 
 ```
 
 ## Nivel de educacion del padre
 
-```{r univar Fedu}
+```{r univar Fedu, echo=FALSE}
 #boxplot:
 summary(data$Fedu)
 data$Fedu = factor(
@@ -117,13 +115,13 @@ summary(data$Fedu)
 
 fatherEdTable=tabla_freq(data$Fedu,0)
 fatherEdTable
-getAbsFrequencyBarGraph(fatherEdTable, c("Nivel de educacion del padre", "Frecuencia"), c(0,120), seq(0,120,10))
-getRelFrequencyBarGraph(fatherEdTable, c("Nivel de educacion del padre", "Frecuencia"), c(0,0.5), seq(0,0.5,0.05))
+getAbsFrequencyBarGraph(fatherEdTable, c("Nivel de educacion del padre", "Frecuencia Absoluta"), c(0,120), seq(0,120,10))
+getRelFrequencyBarGraph(fatherEdTable, c("Nivel de educacion del padre", "Frecuencia Relativa"), c(0,0.5), seq(0,0.5,0.05))
 ```
 
 ## Tiempo de viaje de la casa a la escuela
 
-```{r univar traveltime}
+```{r univar traveltime, echo=FALSE}
 #boxplot:
 head(data$traveltime)
 data$traveltime = factor(
@@ -135,8 +133,8 @@ summary(data$traveltime)
 
 travelTimeTable=tabla_freq(data$traveltime,0)
 travelTimeTable
-getAbsFrequencyBarGraph(travelTimeTable, c("Tiempo de viaje", "Frecuencia"), c(0,300), seq(0,300,20))
-getRelFrequencyBarGraph(travelTimeTable, c("Tiempo de viaje", "Frecuencia"), c(0,0.8), seq(0,0.8,0.05))
+getAbsFrequencyBarGraph(travelTimeTable, c("Tiempo de viaje", "Frecuencia Absoluta"), c(0,300), seq(0,300,20))
+getRelFrequencyBarGraph(travelTimeTable, c("Tiempo de viaje", "Frecuencia Relativa"), c(0,0.8), seq(0,0.8,0.05))
 
 ```
 
@@ -148,19 +146,22 @@ summary(data$paid)
 
 paidTable=tabla_freq(data$paid,0)
 paidTable
-getAbsFrequencyBarGraph(paidTable, c("Clases extra pagadas", "Frecuencia"), c(0,200), seq(0,200,10))
-getRelFrequencyBarGraph(travelTimeTable, c("Tiempo de viaje", "Frecuencia"), c(0,0.7), seq(0,0.7,0.05))
+getAbsFrequencyBarGraph(paidTable, c("Clases extra pagadas", "Frecuencia Absoluta"), c(0,200), seq(0,200,10))
+getRelFrequencyBarGraph(travelTimeTable, c("Tiempo de viaje", "Frecuencia Relativa"), c(0,0.7), seq(0,0.7,0.05))
 
 ```
-# Analisi Bivariado
+
+# Analisis Bivariado
+
+Al momento de analizar las relaciones entre variables cuantitativas y cualitativas se debe verificar que los datos cumplan una distribucion normal, dependiendo de esto se pueden tomar diferentes caminos para probar igualdad de medias entre diferentes tratamientos. A continuacion evaluamos la normalidad de la variable G3.
+
 ```{r bivar G3, echo=FALSE, results='asis'}
 
  # Peso del bebé vs raza de la madre
-getCompBoxPlot(ggplot(data, aes(x=Medu, y=G3)), c("Educacion de la madre", "Nota final"))
-
 qqPlot(data$G3)
 
-cat("Como se ve en el grafico algunos puntos se ven fueras de los rangos, lo cual puede significa que no se cumple normalidad. Para validar esto se puede hacer un prueba de Shapiro")
+cat("
+Como se ve en el grafico algunos puntos se ven fueras de los rangos, lo cual puede significa que no se cumple normalidad. Para validar esto se puede hacer un prueba de Shapiro")
 
 shapiro.test(data$G3)
 cat("Dado que el valor p es menor a 0.05 se rechaza la hipotesis nula de normalidad en la distribucion de los datos")
@@ -174,29 +175,83 @@ Tenemos entonces mayor certeza al descartar el supuesto de normalidad en los dat
 ## Nivel de educacion de la madre vs notas finales
 
 Dado que no se cumple normalidad podriamos realizar un analisis de igualdad de medias con la prueba de Kruskal-Wallis.
-```{r bivar G3 vs Medu kruskal}
-kruskal.test(G3 ~ Medu, data = data)
+```{r bivar G3 vs Medu, echo=FALSE }
+## Tabla descriptiva
+Medu_G3 <- data %>% select(G3, Medu)
+psych::describeBy(Medu_G3, Medu_G3$Medu, mat=TRUE, IQR=TRUE, quant = c(.25,.75), digits=4) %>% 
+  na.omit() %>%
+  select(-item, -vars) %>%
+  rename(category = group1)
+
+getCompBoxPlot(ggplot(Medu_G3, aes(x=Medu, y=G3)), c("Educacion de la madre", "Nota final"))
 ```
-Como el valor p es menor a 0.05 se puede decir con un nivel de signficancia de 95% que existe diferencia significativa entre las medias de los grupos. Es decir, esta prueba corrobora con un nivel de significancia de 95% que el nivel educativo de la madre (Medu) influye sobre las notas finales. Dado que se rechazo la hipotesis nula de la prueba se puede realizar la prueba de Wilcox para corroborar lo analizado en la prueba anterior
+
+Vemos que visualmente entre las diferentes tratamientos hay diferencias, para verificar esto estadisticamente procedemos a realizar una prueba de Kruskal-Wallis. Esta prueba verifica la igual entre las medias de las diferentes poblaciones.
+
+```{r bivar G3 vs Medu kruskal}
+## Prueba Kruskal-Wallis
+kruskal.test(G3~Medu, data=Medu_G3)  # Medias diferentes
+```
+Como el valor p es menor a 0.05 se puede decir con un nivel de signficancia de 95% que existe diferencia significativa entre las medias de los grupos. Es decir, esta prueba corrobora con un nivel de significancia de 95% que el nivel educativo de la madre (Medu) influye sobre las notas finales. Dado que se rechazo la hipotesis nula de la prueba se puede realizar la prueba de Wilcox para identificar cuales son las medias diferentes.
+
 
 ```{r bivar G3 vs Medu wilcox}
-notesMeduWilcoxData = data[data$Medu == "none or primary education (4th grade)" | data$Medu == "5th to 9th grade",]
-wilcox.test(G3 ~ Medu, data = notesMeduWilcoxData, exact=FALSE)
+## Prueba Wilcoxon
+wilcoxG3_Medu = pairwise.wilcox.test(x=Medu_G3$G3, g=Medu_G3$Medu) 
+wilcoxG3_Medu
+wilcoxG3_Medu$p.value < 0.05
 ```
+
+Al utilizar la prueba wilcox para identificar las medias diferentes se puede decir con un nivel de confiabilidad de 95% que son estadisticamente diferentes las medias entre higher education y none or primary education (4th grade). Es decir la media de notas finales de los estudiantes con madres con educacion universitaria son diferentes a las notas de los estudiantes con madres con educacion nula o primaria.
+
 
 ## Nivel de educacion del padre vs notas finales
 
 Dado que no se cumple normalidad podriamos realizar un analisis de igualdad de medias con la prueba de Kruskal-Wallis.
 ```{r bivar G3 vs Fedu }
+Fedu_G3 <- data %>% select(G3, Fedu)
+psych::describeBy(Fedu_G3, Fedu_G3$Fedu, mat=TRUE, IQR=TRUE, quant = c(.25,.75), digits=4) %>% 
+  na.omit() %>%
+  select(-item, -vars) %>%
+  rename(category = group1)
+
+getCompBoxPlot(ggplot(Fedu_G3, aes(x=Fedu, y=G3)), c("Educacion de la madre", "Nota final"))
+```
+
+Vemos que visualmente entre las diferentes tratamientos hay diferencias, para verificar esto estadisticamente procedemos a realizar una prueba de Kruskal-Wallis. Esta prueba verifica la igual entre las medias de las diferentes poblaciones.
+
+```{r bivar G3 vs Fedu  kruskal}
 kruskal.test(G3 ~ Fedu, data = data)
 ```
-De igual manera, para este analisis como el valor p es menor a 0.05 se puede decir con un nivel de signficancia de 95% que existe diferencia significativa entre las medias de los grupos. Es decir, esta prueba corrobora con un nivel de significancia de 95% que el nivel educativo del padre (Fedu) influye sobre las notas finales.
+
+De igual manera, para este analisis como el valor p es menor a 0.05 se puede decir con un nivel de signficancia de 95% que existe diferencia significativa entre las medias de los grupos. Es decir, esta prueba corrobora con un nivel de significancia de 95% que el nivel educativo del padre (Fedu) influye sobre las notas finales. Posteriormente se puede realizar una prueba de Wilcox para identificar las medias diferentes
+
+```{r bivar G3 vs Fedu wilcox}
+## Prueba Wilcoxon
+wilcoxG3_Fedu = pairwise.wilcox.test(x=Fedu_G3$G3, g=Fedu_G3$Fedu) 
+wilcoxG3_Fedu 
+wilcoxG3_Fedu$p.value < 0.05
+```
+
+En el resultado de la prueba wilcox se puede identificar las medias estadisticamente diferentes con un nivel de confiabilidad de 95%. Vemos que las medias entre higher education y none or primary education (4th grade) tiene valor menor a 0.05 por tanto son diferentes. Es decir la media de notas finales de los estudiantes con padres con educacion universitaria son diferentes a las notas de los estudiantes con padres con educacion nula o primaria.
 
 
 ## Tiempo de viaje vs notas finales
 
 Dado que no se cumple normalidad podriamos realizar un analisis de igualdad de medias con la prueba de Kruskal-Wallis.
 ```{r bivar G3 vs traveltime }
+traveltime_G3 <- data %>% select(G3, traveltime)
+psych::describeBy(traveltime_G3, traveltime_G3$traveltime, mat=TRUE, IQR=TRUE, quant = c(.25,.75), digits=4) %>% 
+  na.omit() %>%
+  select(-item, -vars) %>%
+  rename(category = group1)
+
+getCompBoxPlot(ggplot(traveltime_G3, aes(x=traveltime, y=G3)), c("Tiempo de viaje", "Nota final"))
+```
+
+Vemos que visualmente entre las diferentes tratamientos hay diferencias, para verificar esto estadisticamente procedemos a realizar una prueba de Kruskal-Wallis.
+
+```{r bivar G3 vs traveltime kruskal}
 kruskal.test(G3 ~ traveltime, data = data)
 ```
 
@@ -206,6 +261,19 @@ Para el caso de tiempo de viaje se evidencia que el valor p es mayor a 0.05, lo 
 
 Dado que no se cumple normalidad podriamos realizar un analisis de igualdad de medias con la prueba de Kruskal-Wallis.
 ```{r bivar G3 vs paid }
+paid_G3 <- data %>% select(G3, paid)
+psych::describeBy(paid_G3, paid_G3$paid, mat=TRUE, IQR=TRUE, quant = c(.25,.75), digits=4) %>% 
+  na.omit() %>%
+  select(-item, -vars) %>%
+  rename(category = group1)
+
+getCompBoxPlot(ggplot(paid_G3, aes(x=paid, y=G3)), c("Clases extra", "Nota final"))
+```
+
+Vemos que visualmente no hay diferencias notables entre las medias de los tratamientos, para verificar esto estadisticamente procedemos a realizar una prueba de Kruskal-Wallis.
+
+```{r bivar G3 vs paid kruskal}
 kruskal.test(G3 ~ paid, data = data)
+```
 ```
 En este caso tambien vemos que el valor p no es menor a 0.05 por tanto, no hay una relacion significativa entre las variables. Es decir, las clases pagas extra no afectan significativamente las notas finales.
