@@ -1,0 +1,211 @@
+---
+title: "Maths Analisys"
+author: "Yesid López - Mario Micolta - Daniel Gutiérrez"
+date: "3/22/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(DataExplorer)
+library(dplyr)
+library(ggthemes)
+library(stats)
+library(car)
+library(nortest)
+
+
+tabla_freq<- function(x,total=1,na="ifany"){
+  if (total==1) {
+    M=data.frame("Categoría"=table(x, useNA = na), "Rel"=prop.table(table(x,useNA = na)))[,-3]
+  names(M)=c("Categoría","Freq. Abs.","Freq. Rel.")
+  M$Categoría=as.character(M$Categoría)
+  M[nrow(M)+1,]=c("Total",sum(M$`Freq. Abs.`),sum(M$`Freq. Rel.`))
+  M$`Freq. Rel.`=as.numeric(M$`Freq. Rel.`)
+  M$`Freq. Abs.`=as.numeric(M$`Freq. Abs.`)
+  M
+  } else{
+    M=data.frame(
+      "Categoría"=table(x, useNA = na),
+      "Rel"=prop.table(table(x,useNA = na))
+    )[,-3]
+    names(M)=c("Categoría","Freq. Abs.","Freq. Rel.")
+    M$`Freq. Rel.` = round(M$`Freq. Rel.`, 3)
+    M
+  }
+}
+
+getAbsFrequencyBarGraph = function(table, config, limits, breaks) {
+  ggplot(table, aes(x=Categoría, y=`Freq. Abs.`))+
+    geom_bar(stat = "identity", fill="steelblue", color="black")+
+    labs(x=config[1],y=config[2])+
+    scale_y_continuous(limits=limits, breaks=breaks)+
+    geom_text(aes(x=Categoría, y=`Freq. Abs.`, label=`Freq. Abs.`),vjust=-0.5, fontface = "bold", size=5)+
+    theme_base()
+}
+
+getRelFrequencyBarGraph = function(table, config, limits, breaks) {
+  ggplot(table, aes(x=Categoría, y=`Freq. Rel.`))+
+    geom_bar(stat = "identity", fill="steelblue", color="black")+
+    labs(x=config[1],y=config[2])+
+    scale_y_continuous(limits=limits, breaks=breaks)+
+    geom_text(aes(x=Categoría, y=`Freq. Rel.`, label=`Freq. Rel.`),vjust=-0.5, fontface = "bold", size=5)+
+    theme_base()
+}
+
+getCompareBoxplot = function(data, config, labels) {
+  ggplot(data, aes(x=config[1], y=config[2]))+
+    geom_boxplot(fill="orange")+
+    labs(x=labels[1],y=labels[2])+
+    theme_base()
+}
+
+getCompBoxPlot = function(plot, labels) {
+  plot + geom_boxplot(fill="orange")+
+    labs(x=labels[1],y=labels[2])+
+    theme_base()
+}
+```
+
+## R Markdown
+
+```{r}
+load("performance.RData")
+
+data <- base_f
+head(data)
+
+str(data)
+summary(data)
+
+educationLevelsLabels = c("none or primary education (4th grade)", "5th to 9th grade", "secondary education", "higher education")
+
+# Variable dependiente
+# create_report(data)
+```
+
+## Nivel de educacion de la madre
+
+```{r univar Medu}
+#boxplot:
+summary(data$Medu)
+data$Medu = factor(
+  data$Medu,
+  levels=c(1:4),
+  labels=educationLevelsLabels
+)
+summary(data$Medu)
+
+motherEdTable=tabla_freq(data$Medu,0)
+getAbsFrequencyBarGraph(motherEdTable, c("Nivel de educacion de la madre", "Frecuencia"), c(0,150), seq(0,150,10))
+getRelFrequencyBarGraph(motherEdTable, c("Nivel de educacion de la madre", "Frecuencia"), c(0,0.5), seq(0,0.5,0.05))
+
+```
+
+## Nivel de educacion del padre
+
+```{r univar Fedu}
+#boxplot:
+summary(data$Fedu)
+data$Fedu = factor(
+  data$Fedu,
+  levels=c(1:4),
+  labels=educationLevelsLabels
+)
+summary(data$Fedu)
+
+fatherEdTable=tabla_freq(data$Fedu,0)
+fatherEdTable
+getAbsFrequencyBarGraph(fatherEdTable, c("Nivel de educacion del padre", "Frecuencia"), c(0,120), seq(0,120,10))
+getRelFrequencyBarGraph(fatherEdTable, c("Nivel de educacion del padre", "Frecuencia"), c(0,0.5), seq(0,0.5,0.05))
+```
+
+## Tiempo de viaje de la casa a la escuela
+
+```{r univar traveltime}
+#boxplot:
+head(data$traveltime)
+data$traveltime = factor(
+  data$traveltime,
+  levels=c(1:3),
+  labels=c("<15 min.","15 to 30 min.", ">30 min.")
+)
+summary(data$traveltime)
+
+travelTimeTable=tabla_freq(data$traveltime,0)
+travelTimeTable
+getAbsFrequencyBarGraph(travelTimeTable, c("Tiempo de viaje", "Frecuencia"), c(0,300), seq(0,300,20))
+getRelFrequencyBarGraph(travelTimeTable, c("Tiempo de viaje", "Frecuencia"), c(0,0.8), seq(0,0.8,0.05))
+
+```
+
+## Clases extra pagadas 
+
+```{r univar paid}
+#boxplot:
+summary(data$paid)
+
+paidTable=tabla_freq(data$paid,0)
+paidTable
+getAbsFrequencyBarGraph(paidTable, c("Clases extra pagadas", "Frecuencia"), c(0,200), seq(0,200,10))
+getRelFrequencyBarGraph(travelTimeTable, c("Tiempo de viaje", "Frecuencia"), c(0,0.7), seq(0,0.7,0.05))
+
+```
+# Analisi Bivariado
+```{r bivar G3, echo=FALSE, results='asis'}
+
+ # Peso del bebé vs raza de la madre
+getCompBoxPlot(ggplot(data, aes(x=Medu, y=G3)), c("Educacion de la madre", "Nota final"))
+
+qqPlot(data$G3)
+
+cat("Como se ve en el grafico algunos puntos se ven fueras de los rangos, lo cual puede significa que no se cumple normalidad. Para validar esto se puede hacer un prueba de Shapiro")
+
+shapiro.test(data$G3)
+cat("Dado que el valor p es menor a 0.05 se rechaza la hipotesis nula de normalidad en la distribucion de los datos")
+ad.test(data$G3)
+cat("Seguido se realiza la prueba de Anderson-Darling, dado que el valor p es menor a 0.05 se rechaza la hipotesis nula de normalidad en la distribucion de los datos.
+
+Tenemos entonces mayor certeza al descartar el supuesto de normalidad en los datos.")
+
+```
+
+## Nivel de educacion de la madre vs notas finales
+
+Dado que no se cumple normalidad podriamos realizar un analisis de igualdad de medias con la prueba de Kruskal-Wallis.
+```{r bivar G3 vs Medu kruskal}
+kruskal.test(G3 ~ Medu, data = data)
+```
+Como el valor p es menor a 0.05 se puede decir con un nivel de signficancia de 95% que existe diferencia significativa entre las medias de los grupos. Es decir, esta prueba corrobora con un nivel de significancia de 95% que el nivel educativo de la madre (Medu) influye sobre las notas finales. Dado que se rechazo la hipotesis nula de la prueba se puede realizar la prueba de Wilcox para corroborar lo analizado en la prueba anterior
+
+```{r bivar G3 vs Medu wilcox}
+notesMeduWilcoxData = data[data$Medu == "none or primary education (4th grade)" | data$Medu == "5th to 9th grade",]
+wilcox.test(G3 ~ Medu, data = notesMeduWilcoxData, exact=FALSE)
+```
+
+## Nivel de educacion del padre vs notas finales
+
+Dado que no se cumple normalidad podriamos realizar un analisis de igualdad de medias con la prueba de Kruskal-Wallis.
+```{r bivar G3 vs Fedu }
+kruskal.test(G3 ~ Fedu, data = data)
+```
+De igual manera, para este analisis como el valor p es menor a 0.05 se puede decir con un nivel de signficancia de 95% que existe diferencia significativa entre las medias de los grupos. Es decir, esta prueba corrobora con un nivel de significancia de 95% que el nivel educativo del padre (Fedu) influye sobre las notas finales.
+
+
+## Tiempo de viaje vs notas finales
+
+Dado que no se cumple normalidad podriamos realizar un analisis de igualdad de medias con la prueba de Kruskal-Wallis.
+```{r bivar G3 vs traveltime }
+kruskal.test(G3 ~ traveltime, data = data)
+```
+
+Para el caso de tiempo de viaje se evidencia que el valor p es mayor a 0.05, lo cual quiere decir que no hay una relacion significativa entre las variables. Es decir, el tiempo de viaje del estudiante no afecta significativa el resultado de las notas finales.
+
+## Clases extra pagas vs notas finales
+
+Dado que no se cumple normalidad podriamos realizar un analisis de igualdad de medias con la prueba de Kruskal-Wallis.
+```{r bivar G3 vs paid }
+kruskal.test(G3 ~ paid, data = data)
+```
+En este caso tambien vemos que el valor p no es menor a 0.05 por tanto, no hay una relacion significativa entre las variables. Es decir, las clases pagas extra no afectan significativamente las notas finales.
