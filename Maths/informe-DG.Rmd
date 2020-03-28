@@ -99,6 +99,7 @@ plotBar <- function(data){
     theme_minimal() +
     theme(
       axis.title = element_blank(),
+      plot.title = element_text(size = 15, margin = margin(b = 25)),
       plot.subtitle = element_text(size = 12, color = "darkslategrey", margin = margin(b = 25)),
       panel.grid.major.x = element_blank(),
       panel.grid.minor = element_blank()
@@ -111,7 +112,7 @@ plotDoughnut <- function(data){
     geom_bar(stat="identity", width=1, color="black") +
     scale_fill_manual(values = c("#0D1F2D", "#546A7B", "#9EA3B0", "#91999F", "#33658A", "#2F4858", "#4F5D75", "#BFC0C0", "#212D40", "#364156")) +
     coord_polar("y", start=0) +
-    labs(fill = 'Tipos', y = 'Frec. Relativa', title = 'Diabrama Dona - Frecuencia Relativa') +
+    labs(fill = 'Tipos', y = 'Frec. Relativa', title = 'Diabrama de Dona - Frecuencia Relativa') +
     theme_void() +
     geom_text(aes(label = percent(percentage/100)),position = position_stack(vjust = 0.5),color = "white", size=5) +
     xlim(0.5, 2.5) 
@@ -125,6 +126,7 @@ plotBoxplot <- function(data, x, y, title = '', subtitle = '', ylabel = '', capt
     theme_minimal() +
     theme(
       plot.subtitle = element_text(size = 12, color = "darkslategrey", margin = margin(b = 25)),
+      plot.title = element_text(size = 15, margin = margin(b = 25)),
       panel.grid.major.x = element_blank(),
       panel.grid.minor = element_blank(),
       plot.caption = element_text(hjust = 0.5)
@@ -143,6 +145,7 @@ plotUnivariateBoxplot <- function(data, x, xName, title) {
     coord_flip() +
     theme_minimal() +
     theme(
+      plot.title = element_text(size = 15, margin = margin(b = 25)),
       plot.subtitle = element_text(size = 12, color = "darkslategrey", margin = margin(b = 25)),
       panel.grid.major.x = element_blank(),
       panel.grid.minor = element_blank(),
@@ -160,6 +163,7 @@ plotUnivariateHistogram <- function(data, x, xName, title) {
     theme(
       plot.subtitle = element_text(size = 12, color = "darkslategrey", margin = margin(b = 25)),
       panel.grid.major.x = element_blank(),
+      plot.title = element_text(size = 15, margin = margin(b = 25)),
       panel.grid.minor = element_blank(),
       plot.caption = element_text(hjust = 0.5)
     ) 
@@ -209,10 +213,111 @@ El objetivo de esta sección es mostrar los hallazgos **más relevantes** del an
 
 ### Analisis Univariado
 
-#### Cuantitativo
+#### Cuantitativas
 
+##### Nota matemáticas
 
-#### Cualitativo
+```{r univar G3, echo=FALSE}
+## Tabla de información
+kable(data %>% select(G3) %>% psych::describe(IQR = TRUE, quant = c(.25,.75)))
+
+## Diagrama de caja
+plotUnivariateBoxplot(data, data$G3, "Notas de Matematicas", "Boxplot Notas")
+
+## Histograma
+plotUnivariateHistogram(data, data$G3, "Notas Matemáticas", "Distribucion de las notas de matemáticas")
+```
+
+A continuación se hace la prueba de normalidad con 3 pruebas diferentes
+
+```{r normalidad G3}
+# Prueba normalidad
+qqPlot(data$G3)
+shapiro.test(data$G3)
+ad.test(data$G3)
+lillie.test(data$G3)
+```
+
+Tal como se muestra en la gráfica y en las pruebas shapito, Anderson-Darling y Lilliefors (Kolmogorov-Smirnov) las notas de matemáticas **NO** siguen una distribución normal.
+
+##### Edad
+
+```{r univar age, echo=FALSE}
+## Tabla de información
+kable(data %>% select(age) %>% psych::describe(IQR = TRUE, quant = c(.25,.75)))
+
+# Diagrama de caja
+plotUnivariateBoxplot(data, data$age, "Edad", "Boxplot edad")
+
+# Histograma
+data %>% select(age) %>% arrange(age) %>%
+  ggplot(aes(x = age)) +
+  geom_histogram(aes(y=..density..), breaks = seq(14, 25, 1), bins = 1+3.322*log(nrow(data)), color = 'black', fill = '#546A7B') +
+  geom_vline(aes(xintercept=mean(age)), color="blue", linetype="dashed", size=1) + 
+  geom_density(alpha=.1, fill="#FF6666") +
+  labs(x = 'Edades', y = 'Frecuencia Absoluta', title = 'Distribucion de edades') + 
+  scale_x_continuous(breaks = seq(10, 25, 1)) + 
+  scale_y_continuous(limits=c(0,0.4), breaks = seq(0,0.4,0.1), labels = percent) +
+  theme_minimal() +
+  theme(
+    plot.subtitle = element_text(size = 12, color = "darkslategrey", margin = margin(b = 25)),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.caption = element_text(hjust = 0.5)
+  ) 
+```
+
+A continuación se hace la prueba de normalidad con 3 pruebas diferentes
+
+```{r normalidad age}
+# Prueba normalidad
+qqPlot(data$age)
+shapiro.test(data$age)
+ad.test(data$age)
+lillie.test(data$age)
+```
+
+#### Cualitativas
+
+##### Sexo
+
+```{r univar sex, echo=FALSE}
+## Tabla de frecuencia
+kable(freq(data$Fedu, plot = FALSE))
+
+## Diagrama de barras de frecuencia
+plotBar(data$Fedu)
+
+## Diagrama de torta
+plotDoughnut(data$Fedu)
+```
+
+##### Direccion
+
+```{r univar address, echo=FALSE}
+## Tabla de frecuencia
+kable(freq(data$Fedu, plot = FALSE))
+
+## Diagrama de barras de frecuencia
+plotBar(data$Fedu)
+
+## Diagrama de torta
+plotDoughnut(data$Fedu)
+```
+
+##### Estado civil padres
+
+```{r univar Pstatus, echo=FALSE}
+## Tabla de frecuencia
+kable(freq(data$Fedu, plot = FALSE))
+
+## Diagrama de barras de frecuencia
+plotBar(data$Fedu)
+
+## Diagrama de torta
+plotDoughnut(data$Fedu)
+```
+
 
 ##### Nivel de educacion de la madre
 
@@ -266,19 +371,50 @@ plotBar(data$paid)
 plotDoughnut(data$paid)
 ```
 
+##### Razón de ingreso
+
+```{r univar reason, echo=FALSE}
+## Tabla de frecuencia
+kable(freq(data$reason, plot = FALSE))
+
+## Diagrama de barras de frecuencia
+plotBar(data$reason)
+
+## Diagrama de torta
+plotDoughnut(data$reason)
+```
+
+##### Acceso a Internet
+
+```{r univar internet, echo=FALSE}
+## Tabla de frecuencia
+kable(freq(data$internet, plot = FALSE))
+
+## Diagrama de barras de frecuencia
+plotBar(data$internet)
+
+## Diagrama de torta
+plotDoughnut(data$internet)
+```
+
+##### Inasistencias
+
+```{r univar absences, echo=FALSE}
+## Tabla de frecuencia
+kable(freq(data$absences, plot = FALSE))
+
+## Diagrama de barras de frecuencia
+plotBar(data$absences)
+
+
+## Diagrama de torta
+plotDoughnut(data$absences)
+```
+
+
 
 ### Análisis Bivariado
 
-## Conclusiones y Recomendaciones
-
-
-
-
-
-
-
-
-# Analisis Bivariado
 
 Al momento de analizar las relaciones entre variables cuantitativas y cualitativas se debe verificar que los datos cumplan una distribucion normal, dependiendo de esto se pueden tomar diferentes caminos para probar igualdad de medias entre diferentes tratamientos. A continuacion evaluamos la normalidad de la variable G3.
 
@@ -298,7 +434,7 @@ Tenemos entonces mayor certeza al descartar el supuesto de normalidad en los dat
 
 ```
 
-## Nivel de educacion de la madre vs notas finales
+#### Nivel de educacion de la madre vs notas finales
 
 Dado que no se cumple normalidad podriamos realizar un analisis de igualdad de medias con la prueba de Kruskal-Wallis.
 ```{r bivar G3 vs Medu, echo=FALSE }
@@ -402,3 +538,14 @@ kruskal.test(G3 ~ paid, data = data)
 ```
 ```
 En este caso tambien vemos que el valor p no es menor a 0.05 por tanto, no hay una relacion significativa entre las variables. Es decir, las clases pagas extra no afectan significativamente las notas finales.
+
+## Conclusiones y Recomendaciones
+
+
+
+
+
+
+
+
+
