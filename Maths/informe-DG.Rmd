@@ -415,24 +415,7 @@ plotDoughnut(data$absences)
 
 ### Análisis Bivariado
 
-
-Al momento de analizar las relaciones entre variables cuantitativas y cualitativas se debe verificar que los datos cumplan una distribucion normal, dependiendo de esto se pueden tomar diferentes caminos para probar igualdad de medias entre diferentes tratamientos. A continuacion evaluamos la normalidad de la variable G3.
-
-```{r bivar G3, echo=FALSE, results='asis'}
-
-qqPlot(data$G3)
-
-cat("
-Como se ve en el grafico algunos puntos se ven fueras de los rangos, lo cual puede significa que no se cumple normalidad. Para validar esto se puede hacer un prueba de Shapiro")
-
-shapiro.test(data$G3)
-cat("Dado que el valor p es menor a 0.05 se rechaza la hipotesis nula de normalidad en la distribucion de los datos")
-ad.test(data$G3)
-cat("Seguido se realiza la prueba de Anderson-Darling, dado que el valor p es menor a 0.05 se rechaza la hipotesis nula de normalidad en la distribucion de los datos.
-
-Tenemos entonces mayor certeza al descartar el supuesto de normalidad en los datos.")
-
-```
+Al momento de analizar las relaciones entre variables cuantitativas y cualitativas se debe verificar que los datos cumplan una distribucion normal, dependiendo de esto se pueden tomar diferentes caminos para probar igualdad de medias entre diferentes tratamientos. Como se pudo observar cuando se analizó la variable de las notas de matemàticas, no seguía una distribución normal. Por lo tanto, al hacer la comparación de variable cualitativa vs la variable dependiente, se compara usando Kruskal-Wallis para verificar si existe relación entre las variables (verificando si sus distribuciones son la misma). En caso de que no lo sea se pasa a verificar por cada pareja para ver aquellas que influyen en la nota final de matemáticas.
 
 #### Nivel de educacion de la madre vs notas finales
 
@@ -440,12 +423,14 @@ Dado que no se cumple normalidad podriamos realizar un analisis de igualdad de m
 ```{r bivar G3 vs Medu, echo=FALSE }
 ## Tabla descriptiva
 Medu_G3 <- data %>% select(G3, Medu)
-psych::describeBy(Medu_G3, Medu_G3$Medu, mat=TRUE, IQR=TRUE, quant = c(.25,.75), digits=4) %>% 
+kable(psych::describeBy(Medu_G3, Medu_G3$Medu, mat=TRUE, IQR=TRUE, quant = c(.25,.75), digits=4) %>% 
   na.omit() %>%
   select(-item, -vars) %>%
-  rename(category = group1)
+  rename(category = group1))
 
 getCompBoxPlot(ggplot(Medu_G3, aes(x=Medu, y=G3)), c("Educacion de la madre", "Nota final"))
+plotBoxplot(data, data$address, data$G3, title = 'Calificacion final segun el nivel educativo de la madre', subtitle = 'Distribucion de las calificaciones teniendo en cuenta el tipo de domicilio del estudiante', ylabel = 'Calificacion final')
+
 ```
 
 Vemos que visualmente entre las diferentes tratamientos hay diferencias, para verificar esto estadisticamente procedemos a realizar una prueba de Kruskal-Wallis. Esta prueba verifica la igual entre las medias de las diferentes poblaciones.
@@ -467,7 +452,7 @@ wilcoxG3_Medu$p.value < 0.05
 Al utilizar la prueba wilcox para identificar las medias diferentes se puede decir con un nivel de confiabilidad de 95% que son estadisticamente diferentes las medias entre higher education y none or primary education (4th grade). Es decir la media de notas finales de los estudiantes con madres con educacion universitaria son diferentes a las notas de los estudiantes con madres con educacion nula o primaria.
 
 
-## Nivel de educacion del padre vs notas finales
+#### Nivel de educacion del padre vs notas finales
 
 Dado que no se cumple normalidad podriamos realizar un analisis de igualdad de medias con la prueba de Kruskal-Wallis.
 ```{r bivar G3 vs Fedu }
@@ -497,7 +482,7 @@ wilcoxG3_Fedu$p.value < 0.05
 En el resultado de la prueba wilcox se puede identificar las medias estadisticamente diferentes con un nivel de confiabilidad de 95%. Vemos que las medias entre higher education y none or primary education (4th grade) tiene valor menor a 0.05 por tanto son diferentes. Es decir la media de notas finales de los estudiantes con padres con educacion universitaria son diferentes a las notas de los estudiantes con padres con educacion nula o primaria.
 
 
-## Tiempo de viaje vs notas finales
+#### Tiempo de viaje vs notas finales
 
 Dado que no se cumple normalidad podriamos realizar un analisis de igualdad de medias con la prueba de Kruskal-Wallis.
 ```{r bivar G3 vs traveltime }
@@ -518,7 +503,7 @@ kruskal.test(G3 ~ traveltime, data = data)
 
 Para el caso de tiempo de viaje se evidencia que el valor p es mayor a 0.05, lo cual quiere decir que no hay una relacion significativa entre las variables. Es decir, el tiempo de viaje del estudiante no afecta significativa el resultado de las notas finales.
 
-## Clases extra pagas vs notas finales
+#### Clases extra pagas vs notas finales
 
 Dado que no se cumple normalidad podriamos realizar un analisis de igualdad de medias con la prueba de Kruskal-Wallis.
 ```{r bivar G3 vs paid }
@@ -536,8 +521,164 @@ Vemos que visualmente no hay diferencias notables entre las medias de los tratam
 ```{r bivar G3 vs paid kruskal}
 kruskal.test(G3 ~ paid, data = data)
 ```
-```
+
 En este caso tambien vemos que el valor p no es menor a 0.05 por tanto, no hay una relacion significativa entre las variables. Es decir, las clases pagas extra no afectan significativamente las notas finales.
+
+#### Acceso a internet  vs notas finales
+
+```{r bivar G3 vs internet }
+internet_G3 <- data %>% select(G3, internet)
+
+## Tabla descriptiva
+kable(psych::describeBy(internet_G3, internet_G3$internet, mat=TRUE, IQR = TRUE, quant = c(.25,.75), digits=4 ) %>% 
+  na.omit() %>%
+  select(-item, -vars) %>%
+  rename(category = group1))
+
+## Diagrama de caja
+plotBoxplot(data, data$internet, data$G3, title = 'Calificacion final segun si el estudiante tiene acceso a internet', subtitle = 'Distribucion de las calificaciones teniendo si el estudiante tiene acceso a internet', ylabel = 'Calificacion final')
+```
+
+
+```{r bivar G3 vs internet kruskal}
+## Prueba Kruskal-Wallis
+kruskal.test(G3~internet,data=internet_G3)  # Distribuciones diferentes
+```
+
+#### Razón de ingreso  vs notas finales
+
+```{r bivar G3 vs reason }
+reason_G3 <- data %>% select(G3, reason)
+
+## Tabla descriptiva
+kable(psych::describeBy(reason_G3, reason_G3$reason, mat=TRUE, IQR = TRUE, quant = c(.25,.75), digits=4 ) %>% 
+  na.omit() %>%
+  select(-item, -vars) %>%
+  rename(category = group1))
+
+## Diagrama de caja
+plotBoxplot(data, data$reason, data$G3, title = 'Calificacion final segun la razon de ingreso del estuadiante', subtitle = 'Distribucion de las calificaciones teniendo la razon de ingreso del estudiante', ylabel = 'Calificacion final')
+```
+
+
+```{r bivar G3 vs reason kruskal}
+## Prueba Kruskal-Wallis
+kruskal.test(G3~reason, data=reason_G3)  # Distribuciones iguales
+```
+
+#### Inasistencias  vs notas finales
+
+```{r bivar G3 vs absences }
+absences_G3 <- data %>% select(G3, absences)
+
+## Tabla descriptiva
+psych::describeBy(absences_G3, absences_G3$absences, mat=TRUE, IQR = TRUE, quant = c(.25,.75), digits=4 ) %>% 
+  na.omit() %>%
+  select(-item, -vars) %>%
+  rename(category = group1)
+
+## Diagrama de caja
+plotBoxplot(data, data$absences, data$G3, title = 'Calificacion final segun la cantidad de inasistencias del estuadiante', subtitle = 'Distribucion de las calificaciones teniendo las inasistencias del estudiante', ylabel = 'Calificacion final')
+
+```
+
+
+```{r bivar G3 vs absences kruskal}
+## Prueba Kruskal-Wallis
+kruskal.test(G3~absences, data=absences_G3)  # Distris diferentes
+
+## Prueba Wilcoxon
+pairwise.wilcox.test(x=absences_G3$G3,g=absences_G3$absences) 
+```
+
+#### Sexo  vs notas finales
+
+```{r bivar G3 vs sex }
+sex_G3 <- data %>% select(G3, sex)
+
+## Tabla descriptiva
+psych::describeBy(sex_G3, sex_G3$sex, mat=TRUE, IQR = TRUE, quant = c(.25,.75), digits=4 ) %>% 
+  na.omit() %>%
+  select(-item, -vars) %>%
+  rename(category = group1)
+
+## Diagrama de caja
+plotBoxplot(data, data$sex, data$G3, title = 'Calificacion final segun el sexo del estudiante', subtitle = 'Distribucion de las calificaciones teniendo en cuenta el sexo del estudiante', ylabel = 'Calificacion final')
+```
+
+
+```{r bivar G3 vs sex kruskal}
+## Prueba Kruskal-Wallis
+kruskal.test(G3~sex, data=sex_G3)  # Distribuciones iguales
+```
+
+#### Edad  vs notas finales
+
+```{r bivar G3 vs age }
+## Grafico dispersion
+data %>%
+  ggplot(aes(x = age, y = G3)) +
+  geom_point() +
+  labs(x = 'Edades expresadas en anios', y = 'Calificacion final', title = 'Calificacion final segun la edad del estudiante') + 
+  scale_x_continuous(breaks = seq(10, 25, 1)) + 
+  scale_y_continuous(limits=c(0,25), breaks = seq(0,24,2)) +
+  theme_minimal() +
+  theme(
+    plot.subtitle = element_text(size = 12, color = "darkslategrey", margin = margin(b = 25)),
+    panel.grid.minor = element_blank(),
+    plot.caption = element_text(hjust = 0.5)
+  ) +
+  geom_jitter()
+```
+
+
+```{r bivar G3 vs age cor}
+## Correlacion
+cor(data$age, data$G3)
+cor.test(data$age, data$G3)
+```
+
+#### Direccion  vs notas finales
+
+```{r bivar G3 vs address }
+address_G3 <- data %>% select(G3, address)
+
+## Tabla descriptiva
+psych::describeBy(address_G3, address_G3$address, mat=TRUE, IQR = TRUE, quant = c(.25,.75), digits=4 ) %>% 
+  na.omit() %>%
+  select(-item, -vars) %>%
+  rename(category = group1)
+
+## Diagrama de caja
+plotBoxplot(data, data$address, data$G3, title = 'Calificacion final segun el tipo de domicilio del estuadiante', subtitle = 'Distribucion de las calificaciones teniendo en cuenta el tipo de domicilio del estudiante', ylabel = 'Calificacion final')
+```
+
+
+```{r bivar G3 vs address kruskal}
+## Prueba Kruskal-Wallis 
+kruskal.test(G3~address, data=address_G3)  # Distribuciones diferentes
+```
+
+#### Estado civil padres  vs notas finales
+
+```{r bivar G3 vs Pstatus }
+pstatus_G3 <- data %>% select(G3, Pstatus)
+
+## Tabla descriptiva
+psych::describeBy(pstatus_G3, pstatus_G3$Pstatus, mat=TRUE, IQR = TRUE, quant = c(.25,.75), digits=4 ) %>% 
+  na.omit() %>%
+  select(-item, -vars) %>%
+  rename(category = group1)
+
+## Diagrama de caja
+plotBoxplot(data, data$Pstatus, data$G3, title = 'Calificacion final segun el estado de convivencia de los padres de los estudiantes', subtitle = 'Distribucion de las calificaciones teniendo en cuenta estado de convivencia de los padres de los estudiantes', ylabel = 'Calificacion final')
+```
+
+
+```{r bivar G3 vs Pstatus kruskal}
+## Prueba Kruskal-Wallis 
+kruskal.test(G3~Pstatus, data=pstatus_G3)  # Distribuciones iguales
+```
 
 ## Conclusiones y Recomendaciones
 

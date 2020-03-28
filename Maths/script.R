@@ -260,7 +260,7 @@ psych::describeBy(internet_G3, internet_G3$internet, mat=TRUE, IQR = TRUE, quant
 plotBoxplot(data, data$internet, data$G3, title = 'Calificacion final segun si el estudiante tiene acceso a internet', subtitle = 'Distribucion de las calificaciones teniendo si el estudiante tiene acceso a internet', ylabel = 'Calificacion final')
 
 ## Prueba Kruskal-Wallis
-kruskal.test(G3~internet,data=internet_G3)  # Medias iguales
+kruskal.test(G3~internet,data=internet_G3)  # Distribuciones diferentes
 
 # Reason vs G3
 reason_G3 <- data %>% select(G3, reason)
@@ -290,10 +290,10 @@ psych::describeBy(absences_G3, absences_G3$absences, mat=TRUE, IQR = TRUE, quant
 plotBoxplot(data, data$absences, data$G3, title = 'Calificacion final segun la cantidad de inasistencias del estuadiante', subtitle = 'Distribucion de las calificaciones teniendo las inasistencias del estudiante', ylabel = 'Calificacion final')
 
 ## Prueba Kruskal-Wallis
-kruskal.test(G3~absences, data=absences_G3)  # Medias diferentes
+kruskal.test(G3~absences, data=absences_G3)  # Distris diferentes
 
 ## Prueba Wilcoxon
-pairwise.wilcox.test(x=absences_G3$G3,g=absences_G3$absences) # INTERPRETAR RESULTADOS!
+pairwise.wilcox.test(x=absences_G3$G3,g=absences_G3$absences) 
 
 # Sexo vs G3
 sex_G3 <- data %>% select(G3, sex)
@@ -308,7 +308,7 @@ psych::describeBy(sex_G3, sex_G3$sex, mat=TRUE, IQR = TRUE, quant = c(.25,.75), 
 plotBoxplot(data, data$sex, data$G3, title = 'Calificacion final segun el sexo del estudiante', subtitle = 'Distribucion de las calificaciones teniendo en cuenta el sexo del estudiante', ylabel = 'Calificacion final')
 
 ## Prueba Kruskal-Wallis
-kruskal.test(G3~sex, data=sex_G3)  # Medias iguales
+kruskal.test(G3~sex, data=sex_G3)  # Distris iguales
 
 # Edad vs G3
 
@@ -346,7 +346,7 @@ psych::describeBy(address_G3, address_G3$address, mat=TRUE, IQR = TRUE, quant = 
 plotBoxplot(data, data$address, data$G3, title = 'Calificacion final segun el tipo de domicilio del estuadiante', subtitle = 'Distribucion de las calificaciones teniendo en cuenta el tipo de domicilio del estudiante', ylabel = 'Calificacion final')
 
 ## Prueba Kruskal-Wallis 
-kruskal.test(G3~address, data=address_G3)  # Medias iguales
+kruskal.test(G3~address, data=address_G3)  # Distris diferentes
 
 # Pstatus vs G3
 pstatus_G3 <- data %>% select(G3, Pstatus)
