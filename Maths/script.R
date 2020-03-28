@@ -113,66 +113,20 @@ str(data)
 summary(data)
 
 # Casting to factor
-data <- data %>% mutate(
-  Medu = factor(ifelse(
-    Medu == 1, "None or primary education (4th grade)",
-    ifelse(
-      Medu == 2, "5th to 9th grade",
-      ifelse(
-        Medu == 3, "secondary education",
-        ifelse(
-          Medu == 4, "higher education",
-          NA
-        )
-      )
-    )
-  )),
-  Fedu = factor(ifelse(
-    Fedu == 1, "None or primary education (4th grade)",
-    ifelse(
-      Fedu == 2, "5th to 9th grade",
-      ifelse(
-        Fedu == 3, "secondary education",
-        ifelse(
-          Fedu == 4, "higher education",
-          NA
-        )
-      )
-    )
-  )),
-  traveltime = factor(ifelse(
-    traveltime == 1, "<15 min.",
-    ifelse(
-      traveltime == 2, "15 to 30 min.",
-      ifelse(
-        traveltime == 3, ">30 min.",
-        NA
-      )
-    )
-  )),
-  absences = factor(ifelse(
-    absences == 1, "0 to 5 absences",
-    ifelse(
-      absences == 2, "6 to 10 absences",
-      ifelse(
-        absences == 3, "11 to 20 absences",
-        ifelse(
-          absences == 4, ">20 absences",
-          NA
-        )
-      )
-    )
-  ))
-)
 
+educationLevelsLabels = c("none or primary education (4th grade)", "5th to 9th grade", "secondary education", "higher education")
+
+data$Medu <- factor( data$Medu,levels=c(1:4),labels=educationLevelsLabels)
+data$Fedu <- factor( data$Fedu,levels=c(1:4),labels=educationLevelsLabels)
 data$sex <- factor(data$sex, levels = c('F', 'M'), labels = c('Femenino', 'Masculino'))
 data$address <- factor(data$address, levels = c('R', 'U'), labels = c('Rural', 'Urbano'))
 data$Pstatus <- factor(data$Pstatus, levels = c('A', 'T'), labels = c('Separados', 'Viviendo juntos'))
+data$traveltime <- factor(data$traveltime,levels=c(1:3),labels=c("<15 min.","15 to 30 min.", ">30 min."))
+data$absences <- factor( data$absences,levels=c(1:4),labels=c("0 to 5 absences","6 to 10 absences","11 to 20 absences" , ">20 absences"))
 
 
 str(data)
 summary(data)
-
 
 # ANÁLISIS UNIVARIADO
 

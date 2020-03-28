@@ -5,16 +5,37 @@ date: "3/22/2020"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r setup libraries, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, fig.width = 10, fig.align = "center")
+
 library(ggplot2)
 library(DataExplorer)
 library(dplyr)
 library(ggthemes)
-library(stats)
+library(psych)
+library(funModeling)
+library(nortest)
+library(knitr)
+
 library(car)
 library(nortest)
+library(corrplot)
+library(fitur)
+library(ggplot2)
+library(directlabels)
+library(ggthemes)
+library(scales)
+library(gridExtra)
+library(stats)
+library(readxl)
+library(reshape2)
+library(dplyr)
+library(BSDA)
+library(e1071)
+library(tidyverse)
+```
 
+```{r setup functions, include=FALSE}
 
 tabla_freq<- function(x,total=1,na="ifany"){
   if (total==1) {
@@ -66,90 +87,196 @@ getCompBoxPlot = function(plot, labels) {
     labs(x=labels[1],y=labels[2])+
     theme_base()
 }
+
+
+plotBar <- function(data){
+  plt <- funModeling::freq(data, plot = FALSE) %>%
+    ggplot(aes(x = var, y = frequency, fill = var)) + 
+    geom_bar(stat='identity', color = 'black') +
+    labs(fill = 'Tipos', y = 'Frec. Absoluta', title = 'Diabrama de barras - Frecuencia Absoluta') +
+    geom_text(aes(label = paste(frequency)), nudge_y = 10, color = 'black', fontface = "bold") +
+    scale_fill_manual(values = c("#0D1F2D", "#546A7B", "#9EA3B0", "#91999F", "#33658A", "#2F4858", "#4F5D75", "#BFC0C0", "#212D40", "#364156")) +
+    theme_minimal() +
+    theme(
+      axis.title = element_blank(),
+      plot.subtitle = element_text(size = 12, color = "darkslategrey", margin = margin(b = 25)),
+      panel.grid.major.x = element_blank(),
+      panel.grid.minor = element_blank()
+    )
+  plt
+}
+
+plotDoughnut <- function(data){
+  funModeling::freq(data, plot = FALSE) %>% ggplot(aes(x=2, y=percentage, fill=var)) +
+    geom_bar(stat="identity", width=1, color="black") +
+    scale_fill_manual(values = c("#0D1F2D", "#546A7B", "#9EA3B0", "#91999F", "#33658A", "#2F4858", "#4F5D75", "#BFC0C0", "#212D40", "#364156")) +
+    coord_polar("y", start=0) +
+    labs(fill = 'Tipos', y = 'Frec. Relativa', title = 'Diabrama Dona - Frecuencia Relativa') +
+    theme_void() +
+    geom_text(aes(label = percent(percentage/100)),position = position_stack(vjust = 0.5),color = "white", size=5) +
+    xlim(0.5, 2.5) 
+}
+
+plotBoxplot <- function(data, x, y, title = '', subtitle = '', ylabel = '', caption = ''){
+  plt <- ggplot(data, aes(x = x, y = y, fill = x)) +
+    geom_boxplot(color = 'gray') +
+    scale_fill_manual(values = c("#0D1F2D", "#546A7B", "#9EA3B0", "#91999F", "#33658A", "#2F4858", "#4F5D75", "#BFC0C0", "#212D40", "#364156")) +
+    labs(fill = 'Tipos', y = ylabel, title = title, subtitle = subtitle, caption = caption) +
+    theme_minimal() +
+    theme(
+      plot.subtitle = element_text(size = 12, color = "darkslategrey", margin = margin(b = 25)),
+      panel.grid.major.x = element_blank(),
+      panel.grid.minor = element_blank(),
+      plot.caption = element_text(hjust = 0.5)
+      
+    ) +
+    xlab("")
+  plt
+}
+
+plotUnivariateBoxplot <- function(data, x, xName, title) {
+  ggplot(data, aes(x = x)) +
+    geom_boxplot(color = 'grey30', fill = '#4F5D75') +
+    labs(x = xName, title = title, caption = '') + 
+    scale_x_continuous(breaks = seq(0, 50, 2)) + 
+    scale_y_continuous(breaks = seq(0, 120, 20)) +
+    coord_flip() +
+    theme_minimal() +
+    theme(
+      plot.subtitle = element_text(size = 12, color = "darkslategrey", margin = margin(b = 25)),
+      panel.grid.major.x = element_blank(),
+      panel.grid.minor = element_blank(),
+      plot.caption = element_text(hjust = 0.5)
+    )
+}
+
+plotUnivariateHistogram <- function(data, x, xName, title) {
+  ggplot(data, aes(x = x)) +
+    geom_histogram(bins = 1+3.322*log(nrow(data)), aes(y=..density..), color = 'black', fill = '#546A7B') +
+    geom_vline(aes(xintercept=mean(x)), color="blue", linetype="dashed", size=1) + 
+    geom_density(alpha=.1, fill="#FF6666") +
+    labs(x = xName, y = 'Frecuencia Relativa', title = title) + 
+    theme_minimal() +
+    theme(
+      plot.subtitle = element_text(size = 12, color = "darkslategrey", margin = margin(b = 25)),
+      panel.grid.major.x = element_blank(),
+      panel.grid.minor = element_blank(),
+      plot.caption = element_text(hjust = 0.5)
+    ) 
+}
+
+
 ```
 
-## R Markdown
 
-```{r, echo=FALSE}
+# Introduccion
+
+Para el ICFES es muy importante conocer cuáles son los factores de éxito en el desempeño en un curso de matemáticas de estudiantes de grado 10mo.
+
+El presente informe, tiene como objetivo presentar las características de los datos de estudiantes de grado 10mo que incluye su desempeño el curso de matemáticas.
+
+Los datos fueron recolectados en un colegio a través del seguimiento del rendimiento académico en el curso de matemáticas.
+
+Inicialmente se presentarán los detalles de la estructura de la base de datos, donde se detallará aspectos como el significado de cada fila y columna, los tipos de variable. Seguido de los detalles de la base de datos, expondremos los hallazgos más importantes en el análisis descriptivo univariado y bivariado y el tratamiento que les dimos. Por último, se listarán una serie de conclusiones y recomendaciones teniendo en cuenta los hallazgos encontrados en los datos.
+
+# Hallazgos
+
+## Limpieza de datos
+
+Antes de empezar se cambia el formato de los datos: 
+
+```{r load data, echo=FALSE}
 load("performance.RData")
 
 data <- base_f
-head(data)
-
-str(data)
-summary(data)
 
 educationLevelsLabels = c("none or primary education (4th grade)", "5th to 9th grade", "secondary education", "higher education")
+
+data$Medu <- factor( data$Medu,levels=c(1:4),labels=educationLevelsLabels)
+data$Fedu <- factor( data$Fedu,levels=c(1:4),labels=educationLevelsLabels)
+data$sex <- factor(data$sex, levels = c('F', 'M'), labels = c('Femenino', 'Masculino'))
+data$address <- factor(data$address, levels = c('R', 'U'), labels = c('Rural', 'Urbano'))
+data$Pstatus <- factor(data$Pstatus, levels = c('A', 'T'), labels = c('Separados', 'Viviendo juntos'))
+data$traveltime <- factor(data$traveltime,levels=c(1:3),labels=c("<15 min.","15 to 30 min.", ">30 min."))
+data$absences <- factor( data$absences,levels=c(1:4),labels=c("0 to 5 absences","6 to 10 absences","11 to 20 absences" , ">20 absences"))
+
+kable(head(data))
 ```
 
-## Nivel de educacion de la madre
+## Exploración de los datos
+
+El objetivo de esta sección es mostrar los hallazgos **más relevantes** del análisis univariado y su relación con la variable dependiente. Esto con el objetivo de dar un vistaso de las variables, mirar su distribución y encontrar si realmente tienen relación:
+
+### Analisis Univariado
+
+#### Cuantitativo
+
+
+#### Cualitativo
+
+##### Nivel de educacion de la madre
 
 ```{r univar Medu, echo=FALSE}
-#boxplot:
-summary(data$Medu)
-data$Medu = factor(
-  data$Medu,
-  levels=c(1:4),
-  labels=educationLevelsLabels
-)
-summary(data$Medu)
+## Tabla de frecuencia
+kable(freq(data$Medu, plot = FALSE))
 
-motherEdTable=tabla_freq(data$Medu,0)
-motherEdTable
-getAbsFrequencyBarGraph(motherEdTable, c("Nivel de educacion de la madre", "Frecuencia Absoluta"), c(0,150), seq(0,150,10))
-getRelFrequencyBarGraph(motherEdTable, c("Nivel de educacion de la madre", "Frecuencia Relativa"), c(0,0.5), seq(0,0.5,0.05))
+## Diagrama de barras de frecuencia
+plotBar(data$Medu)
 
+## Diagrama de torta
+plotDoughnut(data$Medu)
 ```
 
-## Nivel de educacion del padre
+##### Nivel de educacion del padre
 
 ```{r univar Fedu, echo=FALSE}
-#boxplot:
-summary(data$Fedu)
-data$Fedu = factor(
-  data$Fedu,
-  levels=c(1:4),
-  labels=educationLevelsLabels
-)
-summary(data$Fedu)
+## Tabla de frecuencia
+kable(freq(data$Fedu, plot = FALSE))
 
-fatherEdTable=tabla_freq(data$Fedu,0)
-fatherEdTable
-getAbsFrequencyBarGraph(fatherEdTable, c("Nivel de educacion del padre", "Frecuencia Absoluta"), c(0,120), seq(0,120,10))
-getRelFrequencyBarGraph(fatherEdTable, c("Nivel de educacion del padre", "Frecuencia Relativa"), c(0,0.5), seq(0,0.5,0.05))
+## Diagrama de barras de frecuencia
+plotBar(data$Fedu)
+
+## Diagrama de torta
+plotDoughnut(data$Fedu)
 ```
 
-## Tiempo de viaje de la casa a la escuela
+##### Tiempo de viaje de la casa a la escuela
 
 ```{r univar traveltime, echo=FALSE}
-#boxplot:
-head(data$traveltime)
-data$traveltime = factor(
-  data$traveltime,
-  levels=c(1:3),
-  labels=c("<15 min.","15 to 30 min.", ">30 min.")
-)
-summary(data$traveltime)
+## Tabla de frecuencia
+kable(freq(data$traveltime, plot = FALSE))
 
-travelTimeTable=tabla_freq(data$traveltime,0)
-travelTimeTable
-getAbsFrequencyBarGraph(travelTimeTable, c("Tiempo de viaje", "Frecuencia Absoluta"), c(0,300), seq(0,300,20))
-getRelFrequencyBarGraph(travelTimeTable, c("Tiempo de viaje", "Frecuencia Relativa"), c(0,0.8), seq(0,0.8,0.05))
+## Diagrama de barras de frecuencia
+plotBar(data$traveltime)
 
+## Diagrama de torta
+plotDoughnut(data$traveltime)
 ```
 
-## Clases extra pagadas 
+##### Clases extra pagadas 
 
 ```{r univar paid}
-#boxplot:
-summary(data$paid)
+## Tabla de frecuencia
+kable(freq(data$paid, plot = FALSE))
 
-paidTable=tabla_freq(data$paid,0)
-paidTable
-getAbsFrequencyBarGraph(paidTable, c("Clases extra pagadas", "Frecuencia Absoluta"), c(0,200), seq(0,200,10))
-getRelFrequencyBarGraph(travelTimeTable, c("Tiempo de viaje", "Frecuencia Relativa"), c(0,0.7), seq(0,0.7,0.05))
+## Diagrama de barras de frecuencia
+plotBar(data$paid)
 
+## Diagrama de torta
+plotDoughnut(data$paid)
 ```
+
+
+### Análisis Bivariado
+
+## Conclusiones y Recomendaciones
+
+
+
+
+
+
+
 
 # Analisis Bivariado
 
@@ -157,7 +284,6 @@ Al momento de analizar las relaciones entre variables cuantitativas y cualitativ
 
 ```{r bivar G3, echo=FALSE, results='asis'}
 
- # Peso del bebé vs raza de la madre
 qqPlot(data$G3)
 
 cat("
@@ -212,7 +338,6 @@ Dado que no se cumple normalidad podriamos realizar un analisis de igualdad de m
 Fedu_G3 <- data %>% select(G3, Fedu)
 psych::describeBy(Fedu_G3, Fedu_G3$Fedu, mat=TRUE, IQR=TRUE, quant = c(.25,.75), digits=4) %>% 
   na.omit() %>%
-  select(-item, -vars) %>%
   rename(category = group1)
 
 getCompBoxPlot(ggplot(Fedu_G3, aes(x=Fedu, y=G3)), c("Educacion de la madre", "Nota final"))
